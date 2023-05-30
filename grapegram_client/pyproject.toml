@@ -2,14 +2,16 @@
 name = "grapegram"
 version = "0.1.0"
 description = ""
-authors = ["irinakashpur <irinakashpur55@gmail.com>"]
-license = "MIT"
+authors = ["Blacgolyb <andrejomelnickij@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fastapi = "^0.95.1"
-uvicorn = "^0.21.1"
+eel = "^0.16.0"
+jinja2 = "^3.1.2"
+requests = "^2.31.0"
+pydantic = "^1.10.8"
+websocket-client = "^1.5.2"
 
 
 [tool.poetry.group.dev.dependencies]

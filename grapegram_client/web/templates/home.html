@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Grapegram</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,300" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="/eel.js"></script>
+</head>
+<body>
+    <div class="main">
+        <div class="chats-panel">
+            <div class="chats-panel__info">
+                <button class="menu-btn default-btn" onclick="openUserList()">๋🗪</button>
+                <div class="info">
+                    <div>Server URL: <span id="server_url"></span></div>
+                    <div>Username: <span id="username"></span></div>
+                </div>
+            </div>
+            <div class="chats" id="chats">
+            </div>
+        </div>
+        <div class="message-panel">
+            <div class="messages" id="messages">
+            </div>
+            <form class="message-panel__input" action="" onsubmit="sendMessage(event)">
+                <textarea type="text" placeholder="Write message" id="messageText" autocomplete="off"></textarea>
+                <button>
+                    <i class="material-icons">&#xe163;</i>
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="users-panel" id="users-panel">
+        <div class="users-panel__content">
+            <div class="users_list" id="users_list"></div>
+            <button class="default-btn" onclick="createChat()">Create chat</button>
+            <button class="default-btn" onclick="closeUserList()">Close</button>
+        </div>
+    </div>
+    <script>
+        function textAreaAdjust(element) {
+            element.style.height = "1px";
+            element.style.height = (11 + element.scrollHeight)+"px";
+        }
+
+        function textAreaAdjustEvent(e) {
+            textAreaAdjust(e.target);
+        }
+        
+        const messageInput = document.getElementById("messageText");
+        messageInput.addEventListener('input', textAreaAdjustEvent);
+        messageInput.addEventListener('propertychange', textAreaAdjustEvent); // for IE8
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.keyCode == 13) {
+                sendMessage(e);
+            }
+        });
+        
+        function sendMessage(event) {
+            if (messageInput.value.length === 0) {
+                event.preventDefault();
+                return
+            }
+
+            eel.send_message(messageInput.value);
+
+            messageInput.value = "";
+            textAreaAdjust(messageInput);
+            event.preventDefault();
+        }
+
+        let selectedUser = null;
+        function selectUser(elem) {
+            id_input = elem.getElementsByClassName("id")[0];
+
+            elem.classList.add("selected");
+            
+            if (selectedUser === null) {
+                selectedUser = elem;
+                return;
+            }
+            
+            selectedUser.classList.remove("selected");
+            selectedUser = elem;
+        }
+
+        function createChat() {
+            if (selectedUser === null) {
+                alert("select user");
+                return
+            }
+            id_input = selectedUser.getElementsByClassName("id")[0];
+            eel.create_chat(id_input.value);
+            console.log("id_input.value", id_input.value);
+            updateChats();
+        }
+
+        let selectedChat = null;
+        const first_load_history = 1;
+        function selectChat(elem) {
+            id_input = elem.getElementsByClassName("id")[0];
+            eel.select_chat(id_input.value);
+
+            console.log('add_history');
+            eel.add_history();
+            for (let index = 0; index < first_load_history; index++) {
+                eel.add_history();
+            }
+
+            elem.classList.add("selected");
+            
+            if (selectedChat === null) {
+                selectedChat = elem;
+                return;
+            }
+            
+            selectedChat.classList.remove("selected");
+            selectedChat = elem;
+        }
+
+        const messagesElem = document.getElementById("messages");
+        messagesElem.addEventListener('scroll', function() {
+            if (pageYOffset <= 50) {
+                eel.add_history();
+            }
+        });
+
+        eel.expose(append_message);
+        function append_message(message, clear) {
+            if (clear) {
+                messagesElem.innerHTML = "";
+            }
+            console.log(message);
+            messagesElem.innerHTML += message;
+        }
+
+        eel.expose(insert_message);
+        function insert_message(content) {
+            messagesElem.innerHTML = content + messagesElem.innerHTML;
+        }
+
+        eel.expose(redirect_to_login);
+        function redirect_to_login() {
+            redirect("sign_in.html");
+        }
+
+        async function setInfo() {
+            const info = await eel.get_info()();
+
+            const server_url = document.getElementById("server_url");
+            const username = document.getElementById("username");
+
+            server_url.innerHTML = info["server_url"];
+            username.innerHTML = info["username"];
+        }
+
+        const users_list_elem = document.getElementById("users_list");
+        const users_panel_elem = document.getElementById("users-panel");
+        async function openUserList() {
+            users_panel_elem.classList.add("open");
+            const content = await eel.get_all_user()();
+            users_list_elem.innerHTML = content;
+        }
+
+        function closeUserList() {
+            users_panel_elem.classList.remove("open");
+            users_list_elem.innerHTML = "";
+            selectedUser = null;
+        }
+        
+        const chatsList = document.getElementById("chats");
+        async function updateChats() {
+            chats = await eel.update_chats()();
+            console.log(chats);
+            chatsList.innerHTML = chats;
+        }
+
+        async function run() {
+            const is_logged_in = await eel.is_logged_in()();
+            if (!is_logged_in) {
+                console.log("not logged in");
+                redirect("sign_in.html");
+            }
+
+            updateChats();
+
+            eel.connect_to_ws();
+            setInfo();
+        }
+
+
+
+        run();
+
+        function redirect(url) {window.location.replace(url);};
+    </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/sign_in.css">
+    <script type="text/javascript" src="/eel.js"></script>
+    <title>Sign Up</title>
+</head>
+<body>
+    <div class="signIn">
+
+        <h1 class="signIn__title">Grapegram <span>SignUp</span></h1>
+        <div class="signIn__text">Please enter your username and password to create an account.</div>
+
+        <form class="signIn__form" action="" onsubmit="signUp(event)">
+
+            <div class="signIn__input">
+                <input type="text" id="server_url" value="http://localhost:8000">
+                <label for="server_url">Server URL</label>
+            </div>
+
+            <div class="signIn__input">
+                <input type="text" id="username">
+                <label for="username">Name</label>
+            </div>
+
+            <div class="signIn__input">
+                <input type="password" id="password">
+                <label for="password">Password</label>
+            </div>
+
+            <div class="signIn__input">
+                <input type="password" id="password_retype">
+                <label for="password_retype">Confirm Password</label>
+            </div>
+
+            <div class="signIn__checkbox">
+                <input type="checkbox" id="checkbox"> 
+                <label for="checkbox"><a href="#">I agree to the terms conditions</a></label>
+            </div>
+
+            <div class="signIn__account">
+                Already have an account? <a href="sign_in.html">Sign In</a>.
+            </div>
+            
+            
+            <button type="submit" class="signIn__btn">Sign Up</button>
+        </form>
+
+
+        
+
+    </div>
+    <script>
+        const server_url_input = document.getElementById("server_url");
+        const username_input = document.getElementById("username");
+        const password_input = document.getElementById("password");
+        const password_retype_input = document.getElementById("password_retype");
+
+        async function signUp(event) {
+            event.preventDefault();
+            if (password_input.value != password_retype_input.value) {
+                alert("Failed password confirm");
+                return;
+            }
+
+            const is_created = await eel.sign_up(server_url.value, username_input.value, password_input.value)();
+            if (!is_created) {
+                alert("User already exist");
+                return;
+            }
+
+            const is_signed_in = await eel.sign_in(server_url.value, username_input.value, password_input.value)();
+
+            console.log(is_signed_in);
+            if (is_signed_in) {
+                redirect("home.html");
+                // console.log("home.html");
+            } else {
+                alert("wrong user data");
+            }
+        }
+
+        function redirect(url) {window.location.replace(url);};
+    </script>
+</body>
+</html>

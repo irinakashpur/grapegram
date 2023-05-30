@@ -1,0 +1,106 @@
+version: "3.0"
+services:
+  grapegram_server:
+    container_name: grapegram_server
+    image: grapegram_server # Specify the name of the Docker image to be built
+    depends_on:
+      - postgres_db
+      - mongodb
+      - alembic_migrations
+    environment:
+      POSTGRESQL_URL: "postgresql+asyncpg://postgres:postgres@postgres_db:5432/postgres"
+      MONGODB_URL: "mongodb://mongo:mongo@mongodb/"
+    #   SENTRY_URL: "https://2d340f23a0454ea0a23a0d2d6fbe2e1f@o4504938483875840.ingest.sentry.io/4504939751538688"
+    #   APP_PORT: "8000"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    networks:
+      - custom
+  
+  alembic_migrations:
+    container_name: alembic_migrations
+    image: alembic_migrations # Specify the name of the Docker image to be built
+    command: ./run.sh
+    depends_on:
+      - postgres_db
+    environment:
+      ALEMBIC_DATABASE_URL: "postgresql://postgres:postgres@postgres_db/postgres"
+      POSTGRESQL_URL: "postgresql+asyncpg://postgres:postgres@postgres_db:5432/postgres"
+      # SENTRY_URL: "https://2d340f23a0454ea0a23a0d2d6fbe2e1f@o4504938483875840.ingest.sentry.io/4504939751538688"
+      APP_PORT: "8001"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    networks:
+      - custom
+
+  mongodb:
+    container_name: mongodb
+    image: mongo # use the latest image.
+    restart: always
+    environment: # set required env variables to access mongo
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: mongo
+    ports:
+      - 27017:27017
+    volumes: # optional to preserve database after container is deleted.
+      - mongodb-data:/data/db
+    networks:
+      - custom
+  
+  # Mongo Express Service
+  mongo-express:
+    container_name: mongo-express
+    image: mongo-express # latest image
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: mongo
+      ME_CONFIG_MONGODB_ADMINPASSWORD: mongo
+      ME_CONFIG_MONGODB_SERVER: mongodb 
+      # use the name of the mongo container above for server env var.
+      # In our case this is mongodb
+    networks:
+      - custom
+
+  postgres_db:
+    container_name: postgres_db
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - custom
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: pgadmin4_container
+  #   restart: always
+  #   ports:
+  #     - "5050:80"
+  #   depends_on:
+  #     - postgres_db
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: grapegram_admin@gmail.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   volumes:
+  #     - pgadmin-data:/var/lib/pgadmin
+networks:
+  custom:
+    driver: bridge
+volumes:
+  db-data:
+  mongodb-data:
+  pgadmin-data:
